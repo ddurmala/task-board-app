@@ -1,44 +1,182 @@
-$(document).ready(function () {
-    $('#date-input').datepicker();
-});
+const $addBtn = $('#add-task');
+const $toDoOutput = $('.to-do');
+const $inProgressOutput = $('.in-progress');
+const $doneOutput = $('.done');
 
-$('#date-input').datepicker();
+function generateRandomNumber() {
+    const min = Math.pow(10, 14); // Minimum 15-digit number
+    const max = Math.pow(10, 15) - 1; // Maximum 15-digit number
+    return Math.floor(Math.random() * (max - min + 1) + min);
+}
 
-// Retrieve tasks and nextId from localStorage
-let taskList = JSON.parse(localStorage.getItem("tasks"));
-let nextId = JSON.parse(localStorage.getItem("nextId"));
+function getTaskData() {
+    const rawTaskData = localStorage.getItem('tasks');
+    const tasks = JSON.parse(rawTaskData) || []
 
-// Todo: create a function to generate a unique task id
-function generateTaskId() {
+    return tasks;
+}
+
+function setupDragging() {
+    $('.card-body').droppable({
+        accept: 'article',
+        drop: handleTaskDrop
+    });
+
+
+    $('article').draggable({
+        opacity: .8,
+        zIndex: 100,
+        helper: function (eventObj) {
+            const el = $(eventObj.target);
+            let clone;
+
+            if (el.is('article')) {
+                clone = el.clone();
+            } else {
+                clone = el.closest('article').clone();
+            }
+
+            return clone.css({
+                width: el.outerWidth(),
+                height: el.outerHeight()
+            });
+        }
+
+    });
+}
+
+function outputTasks() {
+    const tasks = getTaskData();
+
+    $toDoOutput.empty();
+    $inProgressOutput.empty();
+    $doneOutput.empty();
+
+    tasks.forEach(function (taskObj) {
+        const $taskEl = $(`
+            <article data-id="${taskObj.id}" class="task-card p-2 border border-2 m-2 bg-white}">
+              <h5>${taskObj.title}</h5>
+              <p>${taskObj.description}</p>
+              <p>${taskObj.duedate}</p>
+              <button class="btn bg-danger">delete</button>
+            </article>
+        `);
+
+        const duedate = dayjs(taskObj.duedate);
+        const currentDate = dayjs();
+
+        if (duedate.isSame(currentDate, 'day')) {
+            $taskEl.addClass('alert');
+        }  
+
+
+        // !!!I know something has to be done about the fact there is also a inprogress column
+        if (taskObj.done) {
+            $doneOutput.append($taskEl);
+            $taskEl.addClass('done');
+        } else {
+            $toDoOutput.append($taskEl);
+            $taskEl.removeClass('done');
+        }
+
+    })
+
+    setupDragging();
+}
+
+function addTask() {
+    //grab input elements 
+
+    const $titleInput = $('#title-input');
+    const $descriptionInput = $('#description-input');
+    const $dueDateInput = $('#due-date-input');
+
+    // generate a random id for task
+
+    const id = generateRandomNumber();
+
+    //create an object with the input values
+
+    const task = {
+        id: id,
+        title: $titleInput.val(),
+        description: $descriptionInput.val(),
+        duedate: $dueDateInput.val(),
+        done: false
+    };
+
+    //get the old local storage of tasks or a new array
+
+    const tasks = getTaskData();
+
+    //push the object to the array of tasks
+
+    tasks.push(task);
+
+    // save/replace the old array in localStorage with the newly updated array
+
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+
+    $titleInput.val('');
+    $descriptionInput.val('');
+    $dueDateInput.val('');
+
+    $('#formModal').modal('hide');
+
+    outputTasks();
+}
+
+function handleTaskDrop(eventObj, ui) { 
+
+    const box = $(eventObj.target);
+    const article = $(ui.draggable[0]);
+    const taskId = article.data('id');
+
+    const tasks = getTaskData();
+
+    const task = tasks.find(function (taskObj) {
+        if (taskObj.id === taskId) return true;
+    });
+
+    if (box.hasClass('done')) {
+        task.done = true;
+        article.addClass('done');
+    } else {
+        task.done = false;
+        article.removeClass('done');
+    }
+
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+
+    box.append(article);
+}
+
+function deleteTask(eventObj) {
+    const btn = $(eventObj.target);
+    const taskId = btn.parent('article').data('id');
+
+    const tasks = getTaskData();
+
+    const filtered = tasks.filter(function (taskObj) {
+        if (taskObj.id !== taskId) return true;
+    });
+    
+    localStorage.setItem('tasks', JSON.stringify(filtered));
+    
+    btn.parent('article').remove();
 
 }
 
-// Todo: create a function to create a task card
-function createTaskCard(task) {
+function init() {
+    $('#due-date-input').datepicker({
+        minDate: 0
+    });
 
+    outputTasks();
+
+    $('main').on('click', 'button.bg-danger', deleteTask);
+
+    $addBtn.on('click', addTask);
 }
 
-// Todo: create a function to render the task list and make cards draggable
-function renderTaskList() {
-
-}
-
-// Todo: create a function to handle adding a new task
-function handleAddTask(event) {
-
-}
-
-// Todo: create a function to handle deleting a task
-function handleDeleteTask(event) {
-
-}
-
-// Todo: create a function to handle dropping a task into a new status lane
-function handleDrop(event, ui) {
-
-}
-
-// Todo: when the page loads, render the task list, add event listeners, make lanes droppable, and make the due date field a date picker
-$(document).ready(function () {
-
-});
+init();

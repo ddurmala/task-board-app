@@ -1,16 +1,29 @@
+html, body {
+  height: 100%;
+}
+
 body {
   font-family: 'Open Sans', sans-serif;
   font-size: 16px;
 }
 
-.swim-lanes {
+/* .swim-lanes {
   min-height: 60vh;
-}
+} */
 
-.task-card {
+/* .task-card {
   margin: 0 auto;
-}
+} */
 
 .task-card:hover {
   cursor: grab;
 }
+
+article.alert {
+  background-color: rgb(252, 255, 196) !important;
+}
+
+article.done {
+  background-color: rgba(255, 0, 0, 0.432) !important;
+}
+
