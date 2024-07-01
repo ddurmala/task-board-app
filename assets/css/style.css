@@ -24,8 +24,8 @@ article.alert {
 }
 
 article.past-due {
-  background-color: red !important;
-}
+  background-color: rgba(255, 0, 0, 0.551) !important;
+  }
 
 article.done {
   background-color: rgba(154, 245, 165, 0.432) !important;
