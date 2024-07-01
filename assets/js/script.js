@@ -58,7 +58,7 @@ function outputTasks() {
               <h5>${taskObj.title}</h5>
               <p>${taskObj.description}</p>
               <p>${taskObj.duedate}</p>
-              <button class="btn bg-danger">delete</button>
+              <button class="btn bg-danger text-white">delete</button>
             </article>
         `);
 
@@ -67,13 +67,20 @@ function outputTasks() {
 
         if (duedate.isSame(currentDate, 'day')) {
             $taskEl.addClass('alert');
-        }  
+        }
+
+        if (duedate.isBefore(currentDate, 'day')) {
+            $taskEl.addClass('past-due');
+        }
 
 
         // !!!I know something has to be done about the fact there is also a inprogress column
         if (taskObj.done) {
             $doneOutput.append($taskEl);
             $taskEl.addClass('done');
+        } else if (taskObj.inProgress) {
+            $inProgressOutput.append($taskEl);
+            $taskEl.removeClass('done');
         } else {
             $toDoOutput.append($taskEl);
             $taskEl.removeClass('done');
@@ -126,30 +133,34 @@ function addTask() {
     outputTasks();
 }
 
-function handleTaskDrop(eventObj, ui) { 
-
+function handleTaskDrop(eventObj, ui) {
     const box = $(eventObj.target);
     const article = $(ui.draggable[0]);
     const taskId = article.data('id');
 
     const tasks = getTaskData();
 
-    const task = tasks.find(function (taskObj) {
-        if (taskObj.id === taskId) return true;
-    });
+    const task = tasks.find(taskObj => taskObj.id === taskId);
 
     if (box.hasClass('done')) {
         task.done = true;
-        article.addClass('done');
+        task.inProgress = false;
+        article.addClass('done').removeClass('in-progress');
+    } else if (box.hasClass('in-progress')) {
+        task.done = false;
+        task.inProgress = true;
+        article.addClass('in-progress').removeClass('done');
     } else {
         task.done = false;
-        article.removeClass('done');
+        task.inProgress = false;
+        article.removeClass('done in-progress');
     }
 
     localStorage.setItem('tasks', JSON.stringify(tasks));
 
     box.append(article);
 }
+
 
 function deleteTask(eventObj) {
     const btn = $(eventObj.target);
@@ -160,9 +171,9 @@ function deleteTask(eventObj) {
     const filtered = tasks.filter(function (taskObj) {
         if (taskObj.id !== taskId) return true;
     });
-    
+
     localStorage.setItem('tasks', JSON.stringify(filtered));
-    
+
     btn.parent('article').remove();
 
 }
